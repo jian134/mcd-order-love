@@ -9,12 +9,12 @@
 | 历史消费 | `order-list`、必要时 `query-order` | 收集近 90 天订单时间、状态、实付与餐品；过滤取消、未支付、退款订单 |
 | 门店 | `query-nearby-stores` 或 `delivery-query-stores` | 确认本次可用门店和就餐方式 |
 | 当前商品 | `query-meals`、必要时 `query-meal-detail` | 仅从当前门店可售餐品构造候选；读取可靠的新品标签 |
-| 领券与查券 | `auto-bind-coupons`、`query-my-coupons`、`query-store-coupons` | 先领取、后确认适用券；领券需用户明确要求 |
+| 领券与查券 | `auto-bind-coupons`、`query-my-coupons`、`query-store-coupons` | 推荐流程默认先领取、后确认适用券；用户明确不要领券则跳过领取 |
 | 实际计价 | `calculate-price` | 为每个套餐和适用券取得最终应付金额；超预算则换方案重新计算 |
 | 可选活动新品 | `campaign-calendar` | 补充有日期依据的活动信息，不能代替菜单可售性 |
 | 用户另行确认后 | `create-order`、`query-order` | 仅在明确要求购买时创建并追踪订单 |
 
-Skill 在客户端真实调用以上 MCP 工具。离线 .NET 程序只复核统计和筛选；它不能伪造 MCP 响应，也不能代替真实连接。演示时应展示一次实时调用链，并在 README 中记录使用的工具和结果截图，注意遮盖手机号、地址、订单号及 Token。
+Skill 在客户端真实调用以上 MCP 工具。离线 Python 脚本只复核统计和筛选；它不能伪造 MCP 响应，也不能代替真实连接。演示时应展示一次实时调用链，并在 README 中记录使用的工具和结果截图，注意遮盖手机号、地址、订单号及 Token。
 
 ## 规范化输入
 
@@ -32,7 +32,7 @@ MCP 返回的字段名称和分页结构以实际响应为准。Skill 从实际�
 }
 ```
 
-`status` 统一为 `completed` 后才能参与统计。`paidCents` 和 `payableCents` 必须是 MCP 返回实付、计价结果换算的整数分。`fitScore`（0–100）是 Skill 按用户**明确偏好**和常点餐品给出的候选排序值，不应按性别推断。若历史有效订单少于 3 笔，先询问预算，再填 `userBudgetCents`。候选不足 3 个时继续从门店菜单取不同主餐并调用 `calculate-price`。
+`status` 统一为 `completed` 后才能参与统计。`paidCents` 和 `payableCents` 必须是 MCP 返回实付、计价结果换算的整数分。`fitScore`（0–100）是 Skill 按用户**明确偏好**和常点餐品给出的候选排序值，不应按性别推断。默认 `historyDays=90`、`budgetMultiplier=1.25`、`recommendationCount=3`，用户不必提及；明确要求覆盖默认值时才传对应可选字段。若历史有效订单少于 3 笔，先询问预算，再填 `userBudgetCents`。候选不足指定数量时继续从门店菜单取不同主餐并调用 `calculate-price`。
 
 ## 业务价值与限制
 

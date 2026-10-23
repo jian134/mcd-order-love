@@ -1,12 +1,12 @@
 # 麦麦常点新搭子
 
-基于麦当劳中国 MCP 的个性化点餐 Skill：读取近 90 天实际完成的订单，计算每单实付均价；先领可用券，按当前门店的在售菜单和实时报价，推荐 **3 个实付不高于历史均价 125%** 的不同套餐，并展示可核实的新品单品。
+基于麦当劳中国 MCP 的个性化点餐 Skill。用户只需表达“麦当劳推荐套餐”“今天吃什么”“看看新品”等意图：Skill 默认读取近 **90 天**实际完成的订单，计算每单实付均价；先领可用券，按当前门店的在售菜单和实时报价，推荐 **3 个实付不高于历史均价 125%** 的不同套餐，并展示可核实的新品单品。用户明确指定其他时段或预算时覆盖默认值。
 
 ## 目标用户与示例
 
 适合想快速复购、又想尝试新品且不希望本次消费明显高于平时的用户。
 
-> 我今晚在上海静安寺附近自取，1 位成人，不吃辣。先帮我领券，参考最近三个月订单，推荐 3 套不超过平时每单均价 125% 的套餐，再看看有什么新品。
+> 我今晚在上海静安寺附近自取，不吃辣。麦当劳有什么适合我吃的套餐和新品？
 
 输出会列出样本订单数、实付均价、预算上限、每套组合的餐品和优惠后应付金额。若历史不足 3 笔，Skill 会询问用户预算。成人、儿童等用餐角色由用户提供；不会从购买记录猜测年龄或性别。
 
@@ -15,18 +15,18 @@
 1. 按[麦当劳中国 MCP 接入指南](https://github.com/M-China/mcd-mcp-server)申请个人 Token，在支持 MCP 的客户端配置 `https://mcp.mcd.cn`。`mcp-config.example.json` 只展示环境变量占位符；请按所用客户端文档设置密钥，勿提交真实 Token。
 2. 在支持 Skills 的客户端加载本目录的 `SKILL.md`，并启用麦当劳 MCP。
 3. 用上面的示例提问。Skill 会调用订单、门店、菜单、券与计价工具。是否能够获得完整 90 天历史取决于账号数据和 MCP `order-list` 的实际返回范围。
-4. 可选：用下面的本地 .NET 工具复核均价与筛选结果。工具处理脱敏的规范化 JSON，不连接 MCP，也不需要 Token。
+4. 可选：用下面的 Python 标准库脚本复核均价与筛选结果。脚本处理脱敏的规范化 JSON，不连接 MCP，也不需要 Token。
 
-```powershell
-dotnet run --project src/McdOrderPersona -- examples/sample-input.json
-dotnet run --project src/McdOrderPersona -- --self-test
+```bash
+python src/recommend.py examples/sample-input.json
+python src/recommend.py --self-test
 ```
 
 ## 推荐规则
 
-- 统计窗口：以查询日为基准向前 90 天；只计已完成且实付大于 0 的点餐订单。
+- 默认统计窗口：以查询日为基准向前 90 天；只计已完成且实付大于 0 的点餐订单。用户明确指定其他时段时使用其要求。
 - 平均每单实付 = 有效订单实付总额 ÷ 有效订单数；上限 = 均价 × 1.25，金额以分计算。
-- 先调用 `auto-bind-coupons`，再查当前门店可用券，并用 `calculate-price` 取得最终应付金额。
+- 默认先调用 `auto-bind-coupons`，再查当前门店可用券，并用 `calculate-price` 取得最终应付金额；用户明确不要领券时跳过领取。
 - 候选超出上限时继续尝试其他券和组合；没有 3 个合格方案就如实返回找到的数量。
 - “新品”必须有官方菜单标签或活动信息作依据。订单偏好仅用于排序，不替代用户明确的口味和忌口。
 
@@ -34,7 +34,7 @@ dotnet run --project src/McdOrderPersona -- --self-test
 
 - `SKILL.md`：Skill 的 MCP 调用和决策流程。
 - `MCP_INTEGRATION.md`：调用链、工具说明、数据规范化与业务价值。
-- `src/McdOrderPersona`：确定性的 90 天均价和预算筛选程序。
+- `src/recommend.py`：无第三方依赖的均价和预算筛选程序。
 - `examples/sample-input.json`：不含真实个人信息的离线演示数据。
 - `CONTEST_DECLARATION.md`：赛事官方原版声明。
 
